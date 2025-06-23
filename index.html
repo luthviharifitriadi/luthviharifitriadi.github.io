@@ -9,19 +9,29 @@
       font-family: sans-serif;
       background-color: #F3F4F6;
       padding: 24px;
+      margin: 0;
     }
+
     h1 {
       font-size: 24px;
       font-weight: bold;
       margin-bottom: 16px;
     }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
     input[type="text"], input[type="file"] {
       padding: 10px;
-      margin-bottom: 10px;
-      margin-right: 8px;
+      flex: 1 1 200px;
       border: 1px solid #ccc;
       border-radius: 5px;
     }
+
     #add-button {
       background-color: #3B82F6;
       color: white;
@@ -29,29 +39,40 @@
       padding: 10px 14px;
       border-radius: 5px;
       cursor: pointer;
+      flex: 1 1 150px;
     }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
+      min-width: 600px;
       border-collapse: collapse;
       background-color: white;
       border-radius: 10px;
       overflow: hidden;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      margin-top: 20px;
+      margin-top: 10px;
     }
+
     th, td {
       padding: 12px 16px;
       text-align: left;
       border-bottom: 1px solid #E5E7EB;
       vertical-align: top;
     }
+
     th {
       background-color: #10B981;
       color: white;
     }
+
     tr.done {
       background-color: #D1FAE5;
     }
+
     button {
       background-color: #10B981;
       color: white;
@@ -63,50 +84,93 @@
       margin-top: 20px;
       width: 100%;
     }
-    img {
+
+    img.preview {
       max-width: 100px;
       border-radius: 8px;
       margin-top: 6px;
+      cursor: pointer;
     }
+
     ul {
       margin-top: 24px;
       padding-left: 20px;
     }
+
     li {
       margin-bottom: 6px;
     }
+
     h2 {
       margin-top: 32px;
       font-size: 18px;
       font-weight: bold;
     }
+
+    /* Modal Styles */
+    #photoModal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+
+    #photoModal img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 12px;
+    }
+
+    #photoModal.closeable {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
+  <header style="background-color: #10B981; padding: 16px 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+  <h1 style="font-size: 28px; font-weight: bold; color: white; margin: 0;">
+     SIKARBIT - SISTEM KEBERSIHAN TERPADU
+  </h1>
+</header>
   <h1>🧼 Ceklis Kebersihan Gedung</h1>
 
-  <div>
+  <div class="form-row">
     <input type="text" id="inputArea" placeholder="Area">
     <input type="text" id="inputTask" placeholder="Tugas">
     <button id="add-button" onclick="addChecklistItem()">➕ Tambah Checklist</button>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Area</th>
-        <th>Tugas</th>
-        <th>Bukti Foto</th>
-        <th>Selesai?</th>
-      </tr>
-    </thead>
-    <tbody id="checklist-body"></tbody>
-  </table>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Area</th>
+          <th>Tugas</th>
+          <th>Bukti Foto</th>
+          <th>Selesai?</th>
+        </tr>
+      </thead>
+      <tbody id="checklist-body"></tbody>
+    </table>
+  </div>
 
   <button onclick="saveChecklist()">✅ Simpan Ceklis</button>
 
+ 
+
   <h2>📋 Daftar Tugas yang Selesai</h2>
   <ul id="done-list"></ul>
+
+  <!-- Modal Foto -->
+  <div id="photoModal" class="closeable" onclick="closeModal()">
+    <img id="modalImg" src="" alt="Preview" />
+  </div>
 
   <script>
     let checklist = [];
@@ -175,6 +239,17 @@
       reader.readAsDataURL(file);
     }
 
+    function openModal(src) {
+      const modal = document.getElementById('photoModal');
+      const modalImg = document.getElementById('modalImg');
+      modalImg.src = src;
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('photoModal').style.display = 'none';
+    }
+
     function renderChecklist() {
       const tbody = document.getElementById('checklist-body');
       tbody.innerHTML = '';
@@ -183,7 +258,9 @@
         row.className = item.done ? 'done' : '';
 
         const photoInput = `<input type="file" accept="image/*" onchange="handleImageUpload(event, '${item.id}')">`;
-        const photoPreview = item.photo ? `<br><img src="${item.photo}" alt="Bukti">` : '';
+        const photoPreview = item.photo
+          ? `<br><img class="preview" src="${item.photo}" alt="Bukti" onclick="openModal('${item.photo}')">`
+          : '';
 
         row.innerHTML = `
           <td>${item.area}</td>
@@ -201,7 +278,10 @@
       const time = getCurrentDateTime();
       checklist.filter(item => item.done).forEach(item => {
         const li = document.createElement('li');
-        li.innerHTML = `${item.area} - ${item.task} (${time})` + (item.photo ? `<br><img src="${item.photo}" alt="Bukti" style="max-width: 100px;">` : '');
+        li.innerHTML = `
+          ${item.area} - ${item.task} (${time})
+          ${item.photo ? `<br><img class="preview" src="${item.photo}" onclick="openModal('${item.photo}')">` : ''}
+        `;
         list.appendChild(li);
       });
     }
